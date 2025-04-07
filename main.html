@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>사고 다발 구역 솔루션 유성구</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.4.10/hls.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
+        
+        * {
+            font-family: 'Noto Sans KR', sans-serif;
+        }
+
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .gradient-bg {
+            background: linear-gradient(135deg, #0078d4, #00a2ff);
+        }
+
+        .hover-scale {
+            transition: transform 0.2s ease;
+        }
+
+        .hover-scale:hover {
+            transform: scale(1.02);
+        }
+
+        .custom-shadow {
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .input-focus {
+            transition: all 0.3s ease;
+        }
+
+        .input-focus:focus {
+            border-color: #0078d4;
+            box-shadow: 0 0 0 3px rgba(0, 120, 212, 0.2);
+        }
+
+        .button-gradient {
+            background: linear-gradient(135deg, #0078d4, #005bb5);
+            transition: all 0.3s ease;
+        }
+
+        .button-gradient:hover {
+            background: linear-gradient(135deg, #005bb5, #004c96);
+            transform: translateY(-2px);
+        }
+
+        /* 스크롤바 커스텀 */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #0078d4;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #005bb5;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <!-- 헤더 -->
+    <header class="gradient-bg text-white py-6 custom-shadow">
+        <div class="container mx-auto px-4">
+            <h1 class="text-3xl font-bold text-center flex items-center justify-center">
+                <i class="fas fa-shield-alt mr-3"></i>
+                사고 다발 구역 솔루션
+            </h1>
+        </div>
+    </header>
+
+    <!-- 메인 컨텐츠 -->
+    <div class="container mx-auto px-4 py-8">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <!-- 왼쪽 사이드바 -->
+            <div class="lg:col-span-4 space-y-8">
+                <!-- 입력 폼 -->
+                <div class="glass-effect rounded-xl p-6 custom-shadow hover-scale">
+                    <h2 class="text-xl font-bold text-gray-800 mb-6 flex items-center">
+                        <i class="fas fa-map-marker-alt mr-2 text-blue-600"></i>
+                        사고 다발 구역 등록
+                    </h2>
+                    <form class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">사고 다발 구역 ID</label>
+                            <input type="text" id="accident-id" 
+                                   class="w-full px-4 py-2 rounded-lg border input-focus"
+                                   placeholder="예: ACC-001">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">CCTV 이름</label>
+                            <input type="text" id="accident-name"
+                                   class="w-full px-4 py-2 rounded-lg border input-focus"
+                                   placeholder="예: 대전역 교차로">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">위도</label>
+                            <input type="text" id="latitude"
+                                   class="w-full px-4 py-2 rounded-lg border input-focus"
+                                   placeholder="예: 36.3504">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">경도</label>
+                            <input type="text" id="longitude"
+                                   class="w-full px-4 py-2 rounded-lg border input-focus"
+                                   placeholder="예: 127.3845">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">RTMP 주소</label>
+                            <input type="text" id="rtmp-url"
+                                   class="w-full px-4 py-2 rounded-lg border input-focus"
+                                   placeholder="rtmp://server/live/stream">
+                        </div>
+                        <button type="button" onclick="addAccidentZone()"
+                                class="w-full button-gradient text-white py-3 rounded-lg font-medium flex items-center justify-center">
+                            <i class="fas fa-plus mr-2"></i>
+                            등록하기
+                        </button>
+                    </form>
+                </div>
+
+                <!-- CCTV 목록 -->
+                <div class="glass-effect rounded-xl p-6 custom-shadow hover-scale">
+                    <h2 class="text-xl font-bold text-gray-800 mb-6 flex items-center justify-between">
+                        <div>
+                            <i class="fas fa-list mr-2 text-blue-600"></i>
+                            등록된 사고 다발 구역
+                        </div>
+                        <button onclick="clearAccidentZones()" 
+                                class="text-sm text-red-500 hover:text-red-700 transition-colors">
+                            <i class="fas fa-trash-alt"></i> 전체 삭제
+                        </button>
+                    </h2>
+                    <div id="accident-list" class="space-y-4 max-h-96 overflow-y-auto pr-2">
+                        <!-- 동적으로 추가될 항목들 -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 오른쪽 지도 영역 -->
+            <div class="lg:col-span-8 h-full">
+                <div class="glass-effect rounded-xl overflow-hidden custom-shadow hover-scale h-full flex flex-col">
+                    <!-- 지도 컨트롤 -->
+                    <div class="bg-gray-50 p-4 border-b flex flex-wrap gap-3 justify-center">
+                        <button onclick="switchToDefaultMap()"
+                                class="button-gradient text-white px-6 py-2 rounded-lg font-medium flex items-center">
+                            <i class="fas fa-map mr-2"></i>
+                            기본 지도
+                        </button>
+                        <button onclick="switchToInputMap()"
+                                class="button-gradient text-white px-6 py-2 rounded-lg font-medium flex items-center">
+                            <i class="fas fa-map-marked-alt mr-2"></i>
+                            입력된 지도
+                        </button>
+                        <button onclick="loadDataPage('daejon.html')"
+                                class="button-gradient text-white px-6 py-2 rounded-lg font-medium flex items-center">
+                            <i class="fas fa-chart-bar mr-2"></i>
+                            사고데이터
+                        </button>
+                        <button onclick="loadDataPage('111.html')"
+                                class="button-gradient text-white px-6 py-2 rounded-lg font-medium flex items-center">
+                            <i class="fas fa-exclamation-triangle mr-2"></i>
+                            긴급 시설 및 사각지대
+                        </button>
+                    </div>
+                    <!-- 지도 iframe -->
+                    <iframe id="map-frame" src="input_map.html" class="w-full" style="height: calc(100vh - 240px); min-height: 600px;"></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 저장된 데이터 로드
+        let accidentZones = JSON.parse(localStorage.getItem('accidentZones') || '[]');
+
+        // 페이지 로드시 초기 데이터 로드 및 표시
+        window.onload = function() {
+            console.log('저장된 데이터:', accidentZones);
+            displayAccidentZones();
+
+            // 지도에 기존 마커 표시
+            const mapFrame = document.getElementById("map-frame");
+            accidentZones.forEach(zone => {
+                mapFrame.contentWindow.postMessage({
+                    type: "addAccident",
+                    data: {
+                        accidentId: zone.accidentId,
+                        accidentName: zone.accidentName,
+                        latitude: parseFloat(zone.latitude),
+                        longitude: parseFloat(zone.longitude),
+                        hlsUrl: zone.hlsUrl
+                    }
+                }, "*");
+            });
+        };
+
+        // 사고 다발 구역 표시 함수
+        function displayAccidentZones() {
+            const accidentList = document.getElementById("accident-list");
+            if (!accidentList) {
+                console.error('accident-list 엘리먼트를 찾을 수 없습니다.');
+                return;
+            }
+            
+            // 목록 초기화
+            accidentList.innerHTML = '';
+            
+            // 데이터가 없는 경우 메시지 표시
+            if (!accidentZones || accidentZones.length === 0) {
+                const emptyMessage = document.createElement('div');
+                emptyMessage.className = 'text-center text-gray-500 py-4';
+                emptyMessage.innerHTML = '등록된 사고 다발 구역이 없습니다.';
+                accidentList.appendChild(emptyMessage);
+                return;
+            }
+
+            // 각 사고 다발 구역 표시
+            accidentZones.forEach((zone, index) => {
+                const accidentItem = document.createElement("div");
+                accidentItem.className = "bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow mb-4";
+                accidentItem.innerHTML = `
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="font-medium text-blue-600">${zone.accidentId}</span>
+                        <div class="flex items-center gap-2">
+                            <span class="text-sm text-gray-500">${zone.date || new Date().toLocaleDateString()}</span>
+                            <button onclick="showVideo('${zone.hlsUrl}')" 
+                                    class="text-blue-500 hover:text-blue-700 transition-colors">
+                                <i class="fas fa-play-circle"></i>
+                            </button>
+                            <button onclick="deleteAccidentZone(${index})" 
+                                    class="text-red-500 hover:text-red-700 transition-colors">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <h3 class="font-medium text-gray-800 mb-2">${zone.accidentName}</h3>
+                    <div class="text-sm text-gray-600">
+                        <p class="mb-1"><i class="fas fa-location-dot mr-2"></i>${zone.latitude}, ${zone.longitude}</p>
+                        <p class="truncate"><i class="fas fa-video mr-2"></i>${zone.hlsUrl}</p>
+                    </div>
+                `;
+                accidentList.appendChild(accidentItem);
+            });
+        }
+
+        // 비디오 표시 함수
+        function showVideo(hlsUrl) {
+            // 비디오 플레이어 모달 생성
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            modal.innerHTML = `
+                <div class="bg-white rounded-lg p-4 max-w-4xl w-full mx-4">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-bold">CCTV 영상</h3>
+                        <button onclick="this.parentElement.parentElement.parentElement.remove()" 
+                                class="text-gray-500 hover:text-gray-700">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <video id="videoPlayer" class="w-full aspect-video bg-black" controls></video>
+                </div>
+            `;
+            document.body.appendChild(modal);
+
+            // HLS.js를 사용하여 비디오 재생
+            const video = document.getElementById('videoPlayer');
+            if (Hls.isSupported()) {
+                const hls = new Hls();
+                hls.loadSource(hlsUrl);
+                hls.attachMedia(video);
+                hls.on(Hls.Events.MANIFEST_PARSED, function() {
+                    video.play();
+                });
+                // 에러 처리
+                hls.on(Hls.Events.ERROR, function(event, data) {
+                    console.error('HLS 에러:', data);
+                    if (data.fatal) {
+                        switch(data.type) {
+                            case Hls.ErrorTypes.NETWORK_ERROR:
+                                alert('네트워크 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+                                break;
+                            case Hls.ErrorTypes.MEDIA_ERROR:
+                                alert('미디어 재생 오류가 발생했습니다.');
+                                break;
+                            default:
+                                alert('영상을 재생할 수 없습니다.');
+                                break;
+                        }
+                    }
+                });
+            } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                // iOS 기기를 위한 네이티브 HLS 재생 지원
+                video.src = hlsUrl;
+                video.addEventListener('loadedmetadata', function() {
+                    video.play();
+                });
+            } else {
+                alert('죄송합니다. 현재 브라우저에서는 영상 재생을 지원하지 않습니다.');
+            }
+        }
+
+        // 사고 다발 구역 삭제 함수
+        // index.html에서 deleteAccidentZone 함수 수정
+        function deleteAccidentZone(index) {
+            if (confirm('이 사고 다발 구역을 삭제하시겠습니까?')) {
+                const deletedZone = accidentZones[index];
+                
+                // 배열에서 삭제
+                accidentZones.splice(index, 1);
+                localStorage.setItem('accidentZones', JSON.stringify(accidentZones));
+                
+                // 화면 업데이트
+                displayAccidentZones();
+                
+                // 지도의 마커 삭제
+                const mapFrame = document.getElementById("map-frame");
+                mapFrame.contentWindow.postMessage({
+                    type: "deleteMarker",
+                    data: {
+                        accidentId: deletedZone.accidentId
+                    }
+                }, "*");
+            }
+        }
+function addAccidentZone() {
+    const accidentId = document.getElementById("accident-id").value;
+    const accidentName = document.getElementById("accident-name").value;
+    const latitude = document.getElementById("latitude").value;
+    const longitude = document.getElementById("longitude").value;
+    const rtmpUrl = document.getElementById("rtmp-url").value;
+
+    if (!accidentId || !accidentName || !latitude || !longitude || !rtmpUrl) {
+        alert("모든 필드를 입력해주세요.");
+        return;
+    }
+
+    const hlsUrl = formatHlsUrl(rtmpUrl);
+    
+    // 새로운 사고 다발 구역 데이터 생성
+    const newZone = {
+        accidentId,
+        accidentName,
+        latitude,
+        longitude,
+        rtmpUrl,
+        hlsUrl,
+        date: new Date().toLocaleDateString()
+    };
+    
+    // 데이터 저장
+    accidentZones.push(newZone);
+    localStorage.setItem('accidentZones', JSON.stringify(accidentZones));
+    
+    // 목록 업데이트
+    displayAccidentZones();
+
+    // 입력 필드 초기화
+    document.getElementById("accident-id").value = "";
+    document.getElementById("accident-name").value = "";
+    document.getElementById("latitude").value = "";
+    document.getElementById("longitude").value = "";
+    document.getElementById("rtmp-url").value = "";
+
+    // 지도 프레임 가져오기
+    const mapFrame = document.getElementById("map-frame");
+
+    // 먼저 지도 페이지가 로드되도록 기다림
+    mapFrame.src = "input_map.html";
+    
+    mapFrame.onload = function() {
+        // 지도가 로드된 후 데이터 전송
+        mapFrame.contentWindow.postMessage({
+            type: "addAccident",
+            data: {
+                accidentId,
+                accidentName,
+                latitude: parseFloat(latitude),
+                longitude: parseFloat(longitude),
+                hlsUrl
+            }
+        }, "*");
+        
+        console.log("데이터 전송됨:", {
+            accidentId,
+            accidentName,
+            latitude,
+            longitude,
+            hlsUrl
+        });
+    };
+}
+        
+        // 전체 데이터 초기화 함수
+        function clearAccidentZones() {
+            if (confirm('모든 사고 다발 구역 데이터를 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.')) {
+                // localStorage에서 데이터 삭제
+                localStorage.removeItem('accidentZones');
+                accidentZones = [];
+                displayAccidentZones();
+        
+                // 지도의 모든 마커 삭제
+                const mapFrame = document.getElementById("map-frame");
+                mapFrame.contentWindow.postMessage({ 
+                    type: "clearAllMarkers"
+                }, "*");
+        
+                // 입력된 지도로 전환
+                switchToInputMap();
+                
+                alert('모든 데이터가 삭제되었습니다.');
+            }
+        }
+        
+        function switchToDefaultMap() {
+            document.getElementById("map-frame").src = "Daejeon_Yuseong_Accidents.html";
+        }
+        
+        function switchToInputMap() {
+            document.getElementById("map-frame").src = "input_map.html";
+        }
+        
+        function loadDataPage(page) {
+            document.getElementById("map-frame").src = page;
+        }
+        
+        function formatHlsUrl(rtmpUrl) {
+            const parts = rtmpUrl.replace('rtmp://', '').split('/');
+            return `http://${parts[0]}:1935/live/${parts[2]}/playlist.m3u8`;
+        }
+    </script>
+</body>

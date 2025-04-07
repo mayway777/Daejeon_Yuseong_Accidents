@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>입력한 정보로 지도</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <script src="https://unpkg.com/hls.js@latest"></script>
+    <style>
+        body { 
+            margin: 0; 
+            padding: 0; 
+        }
+        #map { 
+            width: 100%; 
+            height: 100vh;
+        }
+        .video-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .video-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            width: 80%;
+            max-width: 800px;
+        }
+        .video-player {
+            width: 100%;
+            aspect-ratio: 16/9;
+        }
+        .close-button {
+            float: right;
+            margin-bottom: 10px;
+            padding: 5px 15px;
+            background: #ff4444;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+        let map;
+        let markers = new Map();
+        
+        // 지도 초기화
+        function initMap() {
+            map = L.map('map').setView([36.38, 127.3561363], 13);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+        }
+
+        // 비디오 플레이어 표시
+        function showVideo(hlsUrl, name) {
+            const modal = document.createElement('div');
+            modal.className = 'video-modal';
+            modal.innerHTML = `
+                <div class="video-container">
+                    <button class="close-button" onclick="closeVideo()">닫기</button>
+                    <h3>${name}</h3>
+                    <video id="videoPlayer" class="video-player" controls></video>
+                </div>
+            `;
+            document.body.appendChild(modal);
+
+            const video = document.getElementById('videoPlayer');
+            if (Hls.isSupported()) {
+                const hls = new Hls();
+                hls.loadSource(hlsUrl);
+                hls.attachMedia(video);
+                hls.on(Hls.Events.MANIFEST_PARSED, () => video.play());
+            } else {
+                video.src = hlsUrl;
+            }
+        }
+
+        // 비디오 모달 닫기
+        function closeVideo() {
+            const modal = document.querySelector('.video-modal');
+            if (modal) modal.remove();
+        }
+
+        // 마커 추가
+        function addMarker(data) {
+            console.log('마커 추가:', data);
+            const { accidentId, accidentName, latitude, longitude, hlsUrl } = data;
+            
+            // 기존 마커가 있다면 제거
+            if (markers.has(accidentId)) {
+                markers.get(accidentId).remove();
+            }
+
+            const marker = L.marker([parseFloat(latitude), parseFloat(longitude)])
+                .bindPopup(`
+                    <div>
+                        <h3>${accidentName}</h3>
+                        <p>ID: ${accidentId}</p>
+                        <button onclick="showVideo('${hlsUrl}', '${accidentName}')" 
+                                style="width:100%; padding:5px; background:#0078d4; color:white; border:none; border-radius:4px; cursor:pointer;">
+                            영상 보기
+                        </button>
+                    </div>
+                `);
+            
+            marker.addTo(map);
+            markers.set(accidentId, marker);
+            map.setView([parseFloat(latitude), parseFloat(longitude)], 13);
+        }
+
+        // 마커 삭제
+        function removeMarker(accidentId) {
+            console.log('마커 삭제:', accidentId);
+            if (markers.has(accidentId)) {
+                markers.get(accidentId).remove();
+                markers.delete(accidentId);
+            }
+        }
+
+        // 모든 마커 삭제
+        function clearAllMarkers() {
+            console.log('모든 마커 삭제');
+            markers.forEach(marker => marker.remove());
+            markers.clear();
+        }
+
+        // 메시지 수신 처리
+        window.addEventListener('message', function(event) {
+            const { type, data } = event.data;
+            console.log('메시지 수신:', type, data);
+
+            switch(type) {
+                case 'addAccident':
+                    addMarker(data);
+                    break;
+                case 'deleteMarker':
+                    removeMarker(data.accidentId);
+                    break;
+                case 'clearAllMarkers':
+                    clearAllMarkers();
+                    break;
+            }
+        });
+
+        // 지도 초기화
+        initMap();
+
+        // URL 파라미터로 전달된 데이터 처리
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('accidentId')) {
+            const data = {
+                accidentId: urlParams.get('accidentId'),
+                accidentName: urlParams.get('accidentName'),
+                latitude: urlParams.get('latitude'),
+                longitude: urlParams.get('longitude'),
+                hlsUrl: formatHlsUrl(urlParams.get('rtmpUrl'))
+            };
+            if (!isNaN(parseFloat(data.latitude)) && !isNaN(parseFloat(data.longitude))) {
+                addMarker(data);
+            }
+        }
+
+        function formatHlsUrl(rtmpUrl) {
+            if (!rtmpUrl) return '';
+            const parts = rtmpUrl.replace('rtmp://', '').split('/');
+            return `http://${parts[0]}:1935/live/${parts[2]}/playlist.m3u8`;
+        }
+    </script>
+</body>
+</html>
